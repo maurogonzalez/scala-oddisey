@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package oddisey.grpc;
+
+message Odysseus {
+  string message = 1;
+}
