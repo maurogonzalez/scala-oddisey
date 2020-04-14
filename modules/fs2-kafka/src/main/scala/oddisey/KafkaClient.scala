@@ -12,7 +12,7 @@ object KafkaClient {
   )(implicit cs: ContextShift[F]): Resource[F, KafkaProducer[F, String, V]] =
     producerResource[F].using(producerSettings(host, port, serializer))
 
-  def kafkaConsumer[F[_]:ConcurrentEffect, V](
+  def kafkaConsumer[F[_]: ConcurrentEffect, V](
     host: String,
     port: Long,
     deserializer: Deserializer[F, V],
@@ -20,13 +20,13 @@ object KafkaClient {
   )(implicit cs: ContextShift[F], timer: Timer[F]): Resource[F, KafkaConsumer[F, String, V]] =
     consumerResource[F].using(consumerSettings(host, port, consumerGroup, deserializer))
 
-  private def producerSettings[F[_]:ConcurrentEffect, V](host: String, port: Long, serializer: Serializer[F, V]) =
+  private def producerSettings[F[_]: ConcurrentEffect, V](host: String, port: Long, serializer: Serializer[F, V]) =
     ProducerSettings(
       keySerializer   = Serializer[F, String],
       valueSerializer = serializer
     ).withBootstrapServers(s"$host:$port")
 
-  private def consumerSettings[F[_]:ConcurrentEffect, V](
+  private def consumerSettings[F[_]: ConcurrentEffect, V](
     host: String,
     port: Long,
     consumerGroup: String,

@@ -24,13 +24,13 @@ class KafkaClientSpec extends FunSuite {
   implicit val ioTimer: Timer[IO] = IO.timer(ec)
 
   val odysseusDeserializer = Deserializer.lift(bs => Odysseus.parseFrom(bs).pure[IO])
-  val oysseusSerializer    = Serializer.lift[IO, Odysseus](_.toByteArray.pure[IO])
+  val odysseusSerializer    = Serializer.lift[IO, Odysseus](_.toByteArray.pure[IO])
 
   test("producer/consumer") {
     val topic = "OddiseyTopic"
     val group = "OddiseyConsumerGroup"
 
-    val producer = KafkaClient.kafkaProducer(host, port, oysseusSerializer)
+    val producer = KafkaClient.kafkaProducer(host, port, odysseusSerializer)
     val consumer = KafkaClient.kafkaConsumer(host, port, odysseusDeserializer, group)
 
     val words = "But be content with the food and drink aboard our ship ..."

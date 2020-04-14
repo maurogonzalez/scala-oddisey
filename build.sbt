@@ -1,5 +1,5 @@
-lazy val kafka = project
-  .in(file("modules/kafka"))
+lazy val `fs2-kafka` = project
+  .in(file("modules/fs2-kafka"))
   .settings(
     commonSettings,
     name := "kafka",
@@ -14,11 +14,28 @@ lazy val kafka = project
     grpc % "compile->compile;test->test"
   )
 
-lazy val grpc = project
-  .in(file("modules/grpc"))
-  .enablePlugins(Fs2Grpc)
+lazy val `zio-kafka` = project
+  .in(file("modules/zio-kafka"))
   .settings(
     commonSettings,
+    name := "zio-kafka",
+    libraryDependencies ++= Seq(
+      Libraries.`zio-kafka`,
+      Libraries.`zio-streams`,
+      Libraries.Test.munit % Test
+    )
+  )
+  .dependsOn(
+    grpc % "compile->compile;test->test"
+  )
+
+lazy val grpc = project
+  .in(file("modules/grpc"))
+  .settings(
+    commonSettings,
+    PB.targets in Compile := Seq(
+      scalapb.gen(grpc=false) -> (sourceManaged in Compile).value
+    ),
     name := "grpc"
   )
 
