@@ -16,9 +16,11 @@ lazy val kafka = project
 
 lazy val grpc = project
   .in(file("modules/grpc"))
-  .enablePlugins(Fs2Grpc)
   .settings(
     commonSettings,
+    PB.targets in Compile := Seq(
+      scalapb.gen(grpc=false) -> (sourceManaged in Compile).value
+    ),
     name := "grpc"
   )
 
