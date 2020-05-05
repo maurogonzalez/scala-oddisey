@@ -5,3 +5,9 @@ package oddisey.grpc;
 message Odysseus {
   string message = 1;
 }
+
+message OdysseusKey {
+  string id = 1;
+  string custom = 2;
+}
+

@@ -1,41 +1,52 @@
 package oddisey
 
+import java.util.UUID
+
 import cats.effect._
 import fs2.kafka._
 
 object KafkaClient {
 
-  def kafkaProducer[F[_]: ConcurrentEffect, V](
+  def kafkaProducer[F[_]: ConcurrentEffect, K, V](
     host: String,
     port: Long,
-    serializer: Serializer[F, V]
-  )(implicit cs: ContextShift[F]): Resource[F, KafkaProducer[F, String, V]] =
-    producerResource[F].using(producerSettings(host, port, serializer))
+    keySerializer: Serializer[F, K],
+    valueSerializer: Serializer[F, V]
+  )(implicit cs: ContextShift[F]): Resource[F, KafkaProducer[F, K, V]] =
+    producerResource[F].using(producerSettings(host, port, keySerializer, valueSerializer))
 
-  def kafkaConsumer[F[_]: ConcurrentEffect, V](
+  def kafkaConsumer[F[_]: ConcurrentEffect, K, V](
     host: String,
     port: Long,
-    deserializer: Deserializer[F, V],
+    keyDeserializer: Deserializer[F, K],
+    valueDeserializer: Deserializer[F, V],
     consumerGroup: String
-  )(implicit cs: ContextShift[F], timer: Timer[F]): Resource[F, KafkaConsumer[F, String, V]] =
-    consumerResource[F].using(consumerSettings(host, port, consumerGroup, deserializer))
+  )(implicit cs: ContextShift[F], timer: Timer[F]): Resource[F, KafkaConsumer[F, K, V]] =
+    consumerResource[F].using(consumerSettings(host, port, consumerGroup, keyDeserializer, valueDeserializer))
 
-  private def producerSettings[F[_]: ConcurrentEffect, V](host: String, port: Long, serializer: Serializer[F, V]) =
+  private def producerSettings[F[_]: ConcurrentEffect, K, V](
+    host: String,
+    port: Long,
+    keySerializer: Serializer[F, K],
+    valueSerializer: Serializer[F, V]
+  ) =
     ProducerSettings(
-      keySerializer   = Serializer[F, String],
-      valueSerializer = serializer
+      keySerializer   = keySerializer,
+      valueSerializer = valueSerializer
     ).withBootstrapServers(s"$host:$port")
 
-  private def consumerSettings[F[_]: ConcurrentEffect, V](
+  private def consumerSettings[F[_]: ConcurrentEffect, K, V](
     host: String,
     port: Long,
     consumerGroup: String,
-    deserializer: Deserializer[F, V]
+    keyDeserializer: Deserializer[F, K],
+    valueDeserializer: Deserializer[F, V]
   ) =
     ConsumerSettings(
-      keyDeserializer   = Deserializer[F, String],
-      valueDeserializer = deserializer
+      keyDeserializer   = keyDeserializer,
+      valueDeserializer = valueDeserializer
     ).withAutoOffsetReset(AutoOffsetReset.Earliest)
       .withBootstrapServers(s"$host:$port")
       .withGroupId(consumerGroup)
+      .withClientId(s"$consumerGroup-${UUID.randomUUID()}")
 }

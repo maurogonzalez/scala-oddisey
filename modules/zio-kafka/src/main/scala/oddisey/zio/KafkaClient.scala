@@ -9,6 +9,7 @@ import zio.kafka.producer.{ Producer, ProducerSettings }
 import zio.kafka.serde.{ Deserializer, Serde, Serializer }
 
 object KafkaClient {
+  FiberRef.make(0, math.max)
 
   def kafkaProducer[V: Tag](
     host: String,
