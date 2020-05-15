@@ -22,10 +22,10 @@ import oddisey.grpc.example.Odysseus
 import org.apache.kafka.clients.admin.NewTopic
 
 class KafkaStreamsSpec extends KafkaBaseSpec {
-  val sourceTopic = s"kafka-streams-source-test"
-  val sinktopic   = s"kafka-streams-sink-${UUID.randomUUID()}"
-  val appId1      = s"kafka-streams-application-fixed-0"
-  val appId2      = s"kafka-streams-application-${UUID.randomUUID()}"
+  val spec = UUID.randomUUID().toString
+
+  val sourceTopic = s"kafka-streams-source-test-par4546"
+  val appId1      = s"kafka-streams-application-fixed-par4546"
   val words       = "But be content with the food and drink aboard our ship ..."
 
   // Serdes Serializar/Deserializer
@@ -43,7 +43,8 @@ class KafkaStreamsSpec extends KafkaBaseSpec {
         if (shoudThrow) IO.raiseError(new Exception("Bum!"))
         else ref.update(t :: _)
 
-      (IO.shift *> io).unsafeRunSync()
+      println(s"Received in $spec")
+      (IO.shift *> IO.sleep(5.seconds) *> io).unsafeRunSync()
     }
 //    kStream.to(sinktopic)
     kStream.print(Printed.toSysOut())
@@ -64,36 +65,30 @@ class KafkaStreamsSpec extends KafkaBaseSpec {
 
     val spec = for {
       res      <- admin.use(_.createTopic(new NewTopic(sourceTopic, 2, 1.toShort))).attempt
+      _ = println(res)
       ref1   <- Ref.of[IO, List[Odysseus]](List())
-      ref2   <- Ref.of[IO, List[Odysseus]](List())
       signal <- SignallingRef[IO, Boolean](false)
       stream1 = stream(appId1, false, ref1)
-      stream2 = stream(appId2, false, ref2)
-      _  <- produce
+      _ <- IO.sleep(10.seconds)
       s1 <- stream1.serve.start
-      s2 <- stream2.serve.start
       _ <- fs2.Stream
-            .repeatEval(ref1.get.flatMap(r1 => ref2.get.map(r1 -> _)))
-            .evalMap {
-              case (r1, r2) =>
-                signal.set(true).whenA {
-                  r1.map(_.message).toSet == records.map(_.value.message).toSet &&
-                  r2.map(_.message).toSet == records.map(_.value.message).toSet
-                }
+            .repeatEval(ref1.get)
+            .evalMap { r1 =>
+              signal.set(true).whenA { r1.map(_.message).toSet == records.map(_.value.message).toSet }
             }
             .interruptWhen(signal)
             .interruptAfter(5.seconds)
             .compile
             .drain
       res1 <- ref1.get
-      res2 <- ref2.get
-      - <- IO.sleep(30.seconds)
-      _ <- (stream1.close *> s1.cancel) &> (stream2.close *> s2.cancel)
+      _ <- (stream1.close *> s1.cancel)
     } yield {
+      println(s"Count is: ${res1.size}")
       assertEquals(res1.map(_.message).toSet, records.map(_.value.message).toSet)
-      assertEquals(res2.map(_.message).toSet, records.map(_.value.message).toSet)
+
     }
 
+//    produce.unsafeRunSync()
     spec.unsafeRunSync()
 
   }
