@@ -58,12 +58,13 @@ class KafkaStreamsSpec extends KafkaBaseSpec {
 
   val admin = KafkaClient.kafkaAdmin[IO](host, port)
 
-  test("kafkaStreams") {
+  test("kafkaStreams spec") {
     def stream(appId: String, shouldThrow: Boolean, ref: Ref[IO, List[Odysseus]]) =
       new FKafkaStreams(KafkaStreamsClient.stream(host, port, topology(shouldThrow, ref).build(), appId))
 
+    IO(println("jaja")).unsafeRunSync()
     val spec = for {
-      _      <- admin.use(_.createTopic(new NewTopic(sourceTopic, 2, 1.toShort)))
+      res      <- admin.use(_.createTopic(new NewTopic(sourceTopic, 2, 1.toShort))).attempt
       ref1   <- Ref.of[IO, List[Odysseus]](List())
       ref2   <- Ref.of[IO, List[Odysseus]](List())
       signal <- SignallingRef[IO, Boolean](false)
@@ -87,7 +88,7 @@ class KafkaStreamsSpec extends KafkaBaseSpec {
             .drain
       res1 <- ref1.get
       res2 <- ref2.get
-      - <- IO.sleep(30.seconds)
+//      - <- IO.sleep(30.seconds)
       _ <- (stream1.close *> s1.cancel) &> (stream2.close *> s2.cancel)
     } yield {
       assertEquals(res1.map(_.message).toSet, records.map(_.value.message).toSet)
