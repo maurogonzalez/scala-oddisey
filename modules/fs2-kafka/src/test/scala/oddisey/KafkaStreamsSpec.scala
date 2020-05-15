@@ -11,8 +11,9 @@ import cats.instances.list._
 import cats.syntax.applicative._
 import cats.syntax.apply._
 import cats.syntax.flatMap._
+import cats.syntax.parallel._
 import fs2.concurrent.SignallingRef
-import fs2.kafka.{ProducerRecord, ProducerRecords, Serializer}
+import fs2.kafka.{ ProducerRecord, ProducerRecords, Serializer }
 import org.apache.kafka.streams.scala.ImplicitConversions._
 import org.apache.kafka.streams.scala.Serdes._
 import org.apache.kafka.streams.scala.StreamsBuilder
@@ -24,7 +25,8 @@ import oddisey.grpc.example.Odysseus
 class KafkaStreamsSpec extends KafkaBaseSpec {
   val sourceTopic = "kafka-streams-source"
   val sinktopic   = "kafka-streams-sink"
-  val appId       = "kafka-streams-application-source"
+  val appId1      = s"kafka-streams-application-${UUID.randomUUID()}"
+  val appId2      = s"kafka-streams-application-${UUID.randomUUID()}"
   val words       = "But be content with the food and drink aboard our ship ..."
 
   // Serdes
@@ -56,25 +58,38 @@ class KafkaStreamsSpec extends KafkaBaseSpec {
   val produce  = producer.use(p => p.produce(ProducerRecords(records.toList)).flatten)
 
   test("kafkaStreams") {
-    def stream(shouldThrow: Boolean, ref: Ref[IO, List[Odysseus]]) =
+    def stream(appId: String, shouldThrow: Boolean, ref: Ref[IO, List[Odysseus]]) =
       new FKafkaStreams(KafkaStreamsClient.stream(host, port, topology(shouldThrow, ref).build(), appId))
 
     val spec = for {
-      ref    <- Ref.of[IO, List[Odysseus]](List())
+      ref1   <- Ref.of[IO, List[Odysseus]](List())
+      ref2   <- Ref.of[IO, List[Odysseus]](List())
       signal <- SignallingRef[IO, Boolean](false)
-      stream1 = stream(false, ref)
-      _   <- produce
-      s1  <- stream1.serve.start
+      stream1 = stream(appId1, false, ref1)
+      stream2 = stream(appId2, false, ref2)
+      _  <- produce
+      s1 <- stream1.serve.start
+      s2 <- stream2.serve.start
       _ <- fs2.Stream
-            .repeatEval(ref.get)
-            .evalMap(r => signal.set(true).whenA(r.map(_.message).toSet == records.map(_.value.message).toSet))
+            .repeatEval(ref1.get.flatMap(r1 => ref2.get.map(r1 -> _)))
+            .evalMap {
+              case (r1, r2) =>
+                signal.set(true).whenA {
+                  r1.map(_.message).toSet == records.map(_.value.message).toSet &&
+                  r2.map(_.message).toSet == records.map(_.value.message).toSet
+                }
+            }
             .interruptWhen(signal)
             .interruptAfter(5.seconds)
             .compile
             .drain
-      res <- ref.get
-      _   <- stream1.close *> s1.cancel
-    } yield assertEquals(res.map(_.message).toSet, records.map(_.value.message).toSet)
+      res1 <- ref1.get
+      res2 <- ref2.get
+      _    <- (stream1.close *> s1.cancel) &> (stream2.close *> s2.cancel)
+    } yield {
+      assertEquals(res1.map(_.message).toSet, records.map(_.value.message).toSet)
+      assertEquals(res2.map(_.message).toSet, records.map(_.value.message).toSet)
+    }
 
     spec.unsafeRunSync()
 
