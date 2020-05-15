@@ -62,9 +62,7 @@ class MultiConsumerSpec extends KafkaBaseSpec {
             committable.offset.commit.whenA(committable.record.key.custom == custom) &>
             msg.update(committable.record.key +: _).whenA(committable.record.key.custom == custom) *>
             msg.get.flatMap(ks => signal.set(true).whenA(ks.size == keys0.size))
-          }.interruptWhen(signal)
-            .compile
-            .drain
+          }.interruptWhen(signal).compile.drain
         )
 
     val process = for {

@@ -7,6 +7,7 @@ lazy val `fs2-kafka` = project
       Libraries.`cats-retry`,
       Libraries.decline,
       Libraries.`fs2-kafka`,
+      "org.apache.kafka" %% "kafka-streams-scala" % "2.5.0",
       Libraries.Test.munit % Test
     )
   )
