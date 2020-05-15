@@ -7,6 +7,9 @@ import fs2.kafka._
 
 object KafkaClient {
 
+  def kafkaAdmin[F[_]: ConcurrentEffect](host: String, port: Long)(implicit cs: ContextShift[F]) =
+    adminClientResource(AdminClientSettings[F].withBootstrapServers(s"$host:$port"))
+
   def kafkaProducer[F[_]: ConcurrentEffect, K, V](
     host: String,
     port: Long,

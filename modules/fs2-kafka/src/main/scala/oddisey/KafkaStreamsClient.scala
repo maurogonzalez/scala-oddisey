@@ -26,6 +26,7 @@ class FKafkaStreams(streams: KafkaStreams)
   def status: IO[KafkaStreams.State] = execute(_.state())
 
 }
+
 object KafkaStreamsClient {
 
   private def propsBuilder(host: String, port: Int, applicationId: String) = {
