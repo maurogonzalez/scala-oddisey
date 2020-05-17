@@ -28,3 +28,6 @@ services:
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:32181
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:29092
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      # For exactly_once
+      # transaction.state.log.replication.factor
+      # transaction.state.log.min.isr
