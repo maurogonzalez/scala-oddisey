@@ -1,5 +1,14 @@
 version: "3"
 services:
+  redis:
+    image: redis:5.0.7-alpine
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
   zookeeper:
     image: confluentinc/cp-zookeeper:5.4.0
     healthcheck:

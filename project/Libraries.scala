@@ -1,16 +1,17 @@
 import sbt._
 
 object Libraries {
-  val `cats-core`   = "org.typelevel"     %% "cats-core"      % Version.cats
-  val `cats-effect` = "org.typelevel"     %% "cats-effect"    % Version.catsEffect
-  val `cats-retry`  = "com.github.cb372"  %% "cats-retry"     % Version.catsRetry
-  val decline       = "com.monovore"      %% "decline-effect" % Version.decline
-  val `fs2-kafka`   = "com.github.fd4s"   %% "fs2-kafka"      % Version.fs2Kafka
-  val log4cats      = "io.chrisdavenport" %% "log4cats-slf4j" % Version.log4cats
-  val logback       = "ch.qos.logback"    % "logback-classic" % Version.logback
-  val `zio-kafka`   = "dev.zio"           %% "zio-kafka"      % Version.zioKafka
-  val `zio-streams` = "dev.zio"           %% "zio-streams"    % Version.zioStreams
-
+  val `cats-core`       = "org.typelevel"     %% "cats-core"           % Version.cats
+  val `cats-effect`     = "org.typelevel"     %% "cats-effect"         % Version.catsEffect
+  val `cats-retry`      = "com.github.cb372"  %% "cats-retry"          % Version.catsRetry
+  val decline           = "com.monovore"      %% "decline-effect"      % Version.decline
+  val `fs2-kafka`       = "com.github.fd4s"   %% "fs2-kafka"           % Version.fs2Kafka
+  val log4cats          = "io.chrisdavenport" %% "log4cats-slf4j"      % Version.log4cats
+  val logback           = "ch.qos.logback"    % "logback-classic"      % Version.logback
+  val redis4cats        = "dev.profunktor"    %% "redis4cats-effects"  % Version.redis4cats
+  val `redis4cats-logs` = "dev.profunktor"    %% "redis4cats-log4cats" % Version.redis4cats
+  val `zio-kafka`       = "dev.zio"           %% "zio-kafka"           % Version.zioKafka
+  val `zio-streams`     = "dev.zio"           %% "zio-streams"         % Version.zioStreams
 
   object Test {
     val munit = "org.scalameta" %% "munit" % Version.munit
@@ -34,6 +35,7 @@ object Libraries {
     val log4cats         = "1.0.1"
     val logback          = "1.2.3"
     val munit            = "0.4.3"
+    val redis4cats       = "0.10.0-RC3"
     val zioKafka         = "0.7.0"
     val zioStreams       = "1.0.0-RC18-2"
   }

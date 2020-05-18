@@ -37,7 +37,6 @@ object KafkaClient {
       keySerializer   = keySerializer,
       valueSerializer = valueSerializer
     ).withBootstrapServers(s"$host:$port")
-      .withEnableIdempotence(true)
 
   private def consumerSettings[F[_]: ConcurrentEffect, K, V](
     host: String,

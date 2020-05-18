@@ -6,8 +6,12 @@ lazy val `fs2-kafka` = project
     libraryDependencies ++= Seq(
       Libraries.`cats-retry`,
       Libraries.decline,
+      Libraries.log4cats,
+      Libraries.logback,
       Libraries.`fs2-kafka`,
-      "org.apache.kafka" %% "kafka-streams-scala" % "2.5.0",
+      Libraries.redis4cats,
+      Libraries.`redis4cats-logs`,
+      "org.apache.kafka"   %% "kafka-streams-scala" % "2.5.0",
       Libraries.Test.munit % Test
     )
   )
@@ -35,7 +39,7 @@ lazy val grpc = project
   .settings(
     commonSettings,
     PB.targets in Compile := Seq(
-      scalapb.gen(grpc=false) -> (sourceManaged in Compile).value
+      scalapb.gen(grpc = false) -> (sourceManaged in Compile).value
     ),
     name := "grpc"
   )

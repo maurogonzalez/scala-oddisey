@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%thread] %c: %m%n%rEx</pattern>
+        </encoder>
+    </appender>
+    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}" />
+    <logger name="org.apache.kafka" level="WARN"/>
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="console"/>
+    </root>
+</configuration>

@@ -1,11 +1,11 @@
 package oddisey
 
-import cats.effect.IO
+import cats.effect.Sync
 import cats.syntax.flatMap._
 
-abstract class WrapMutable[A](private val a: A) {
+abstract class WrapMutable[F[_], A](private val a: A)(implicit F: Sync[F]) {
 
-  final def execute[B](f: A => B): IO[B]      = IO(f(a))
-  final def executeM[B](f: A => IO[B]): IO[B] = IO(f(a)).flatten
+  final def execute[B](f: A => B): F[B]     = F.delay(f(a))
+  final def executeM[B](f: A => F[B]): F[B] = F.delay(f(a)).flatten
 
 }
