@@ -20,8 +20,8 @@ class KafkaCachedSpec extends KafkaBaseSpec {
 
   val client = RedisClient.redisStandalone("localhost", None)
 
-  val topic = "OddiseyTopic7"
-  val group = "OddiseyConsumerGroup7"
+  val topic = s"OddiseyTopic${UUID.randomUUID()}"
+  val group = s"OddiseyConsumerGroup${UUID.randomUUID()}"
 
   val keySerializer        = Serializer[IO, String]
   val keyDeserializer      = Deserializer[IO, String]
@@ -48,21 +48,26 @@ class KafkaCachedSpec extends KafkaBaseSpec {
   def consume(
     redis: RedisCommands[IO, String, String],
     msg: Ref[IO, List[Odysseus]],
-    signal: SignallingRef[IO, Boolean]
+    externalSignal: SignallingRef[IO, Boolean]
   ) =
     consumer
       .evalTap(_.subscribeTo(topic))
       .evalTap(_ => logger.info("Starting consumer"))
       .use { c =>
-        Ref.of[IO, Int](0).map(ct => ct).flatMap(counter =>
+        SignallingRef[IO, Boolean](false).flatMap(localSignal =>
           c.stream
-            .evalTap(_ => counter.get.flatMap(ct => signal.set(true).whenA(ct != 0 && ct % 3 == 0)))
-            .interruptWhen(signal)
-            .evalMap(m => cache(redis, m.record.key).flatMap(isNew => handler(m, msg).whenA(isNew)))
+            .evalMap(m =>
+              cache(redis, m.record.key)
+                .flatMap(isNew => handler(m, msg).whenA(isNew))
+            )
+            .evalTap(_ => msg.get.flatMap(ct => localSignal.set(true).whenA(ct.nonEmpty && ct.size % 5 == 0)))
             .handleErrorWith(err => fs2.Stream.eval(logger.error(err)(s"Error in consumer")))
+            .interruptWhen(localSignal)
+            .interruptWhen(externalSignal)
             .compile
             .drain
         )
+
       }
 
   def handler(
@@ -74,20 +79,19 @@ class KafkaCachedSpec extends KafkaBaseSpec {
   test("kafka-cached") {
     val spec = RedisClient.redisStandalone("localhost", None).use { redis =>
       for {
-        msgs    <- Ref.of[IO, List[Odysseus]](List())
-        signal0 <- SignallingRef[IO, Boolean](false)
-        signal1 <- SignallingRef[IO, Boolean](false)
-        _ <- produce.start
+        msgs   <- Ref.of[IO, List[Odysseus]](List())
+        signal <- SignallingRef[IO, Boolean](false)
+        _      <- produce.start
         c <- fs2.Stream
-              .repeatEval(consume(redis, msgs, signal0))
-              .interruptWhen(signal1)
+              .repeatEval(consume(redis, msgs, signal))
+              .interruptWhen(signal)
               .compile
               .drain
               .start
         _ <- fs2.Stream
               .repeatEval(msgs.get)
-              .evalMap(r1 => (signal1.set(true) *> c.cancel).whenA(r1.size >= ids.size))
-              .interruptWhen(signal1)
+              .evalMap(r1 => (signal.set(true) *> c.cancel).whenA(r1.size >= ids.size))
+              .interruptWhen(signal)
               .interruptAfter(25.seconds)
               .compile
               .drain
