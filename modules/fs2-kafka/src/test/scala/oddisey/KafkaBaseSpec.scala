@@ -8,7 +8,7 @@ import munit.FunSuite
 
 trait KafkaBaseSpec extends FunSuite {
   val host = "localhost"
-  val port = 29092
+  val port = 9092
 
   val ec: ExecutionContext                      = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
   implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ec)

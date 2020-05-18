@@ -12,7 +12,7 @@ import oddisey.grpc.example.Odysseus
 
 class KafkaClientSpec extends FunSuite {
   val host = "localhost"
-  val port = 29092
+  val port = 9092
 
   val runtime              = Runtime.default
   val odysseusDeserializer = Deserializer((_, _, bs) => RIO(Odysseus.parseFrom(bs)))
