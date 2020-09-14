@@ -41,7 +41,32 @@ lazy val grpc = project
     PB.targets in Compile := Seq(
       scalapb.gen(grpc = false) -> (sourceManaged in Compile).value
     ),
+    PB.protocOptions in Compile := Seq(
+      "--descriptor_set_out=" +
+        (baseDirectory in Compile).value.getParentFile / "grpc" / "src" / "main" / "resources" /"out.desc"
+    ),
     name := "grpc"
+  )
+
+lazy val caliban = project
+  .in(file("modules/caliban"))
+  .settings(
+    commonSettings,
+    name := "caliban",
+    libraryDependencies ++= Seq(
+      "com.github.ghostdogpr" %% "caliban" % "0.9.1",
+       "com.github.ghostdogpr" %% "caliban-http4s"     % "0.9.1",
+      "com.github.ghostdogpr" %% "caliban-cats"     % "0.9.1",
+      Libraries.`cats-retry`,
+      Libraries.decline,
+      Libraries.log4cats,
+      Libraries.logback,
+      Libraries.`fs2-kafka`,
+      Libraries.redis4cats,
+      Libraries.`redis4cats-logs`,
+      "org.http4s"          %% "http4s-blaze-client"   % Libraries.Version.http4s  % Test,
+      Libraries.Test.munit % Test
+    )
   )
 
 lazy val commonSettings = Seq(
